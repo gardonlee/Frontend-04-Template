@@ -3,19 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>地图编辑器</title>
+    <title>广度搜索寻路问题</title>
 </head>
 <body>
     <style>
         .map-container {
             display: flex;
             flex-wrap: wrap;
-            width: 1000px; 
+            width: 800px; 
         }
         .cell {
             box-sizing: border-box;
-            width: 10px;
-            height: 10px;
+            width: 8px;
+            height: 8px;
             background: #eee;
             border-bottom: solid 1px white;
             border-right: solid 1px white;
@@ -43,21 +43,21 @@
         };
 
         const paintMap = (_map) => {
-            for (let x = 0; x < 100; x++) {
-                for (let y = 0; y < 100; y++) {
+            for (let y = 0; y < 100; y++) {
+                for (let x = 0; x < 100; x++) {
                     const cell = document.createElement('div');
                     cell.classList.add('cell');
-                    if (_map[100 * x + y] === 1) {
+                    if (_map[100 * y + x] === 1) {
                         cell.style.background = 'black';
                     }
                     cell.addEventListener('mousemove', () => {
                         if (mousedown) {
                             if (clear) {
                                 cell.style.background = '';
-                                map[100 * x + y] = 0;
+                                map[100 * y + x] = 0;
                             } else {
                                 cell.style.background = 'black';
-                                map[100 * x + y] = 1;
+                                map[100 * y + x] = 1;
                             }
                         }
                     })
@@ -73,6 +73,53 @@
         })
         document.addEventListener('mouseup', () => mousedown = false);
         document.addEventListener('contextmenu', e => e.preventDefault());
+
+        const sleep = (t) => {
+            return new Promise(resolve => {
+                setTimeout(resolve, t);
+            })
+        };
+
+        const findPath = async (map, start, end) => {
+            const table = Object.create(map);
+            const queue = [start];
+
+            const insert = async (x, y, pre) => {
+                if (x < 0 || x >= 100 || y < 0 || y >= 100) return;
+                if (table[100 * y + x]) return;
+
+                container.children[100 * y + x].style.background = 'lightgreen';
+                table[100 * y + x] = pre;
+                queue.push([x, y]);
+            };
+
+            while (queue.length) {
+                let [x, y] = queue.shift();
+                if (x === end[0] && y === end[1]) {
+                    const path = [];
+
+                    while (x !== start[0] || y !== start[1]) {
+                        path.push(map[100 * y + x]);
+                        [x, y] = table[100 * y, x];
+                        await sleep(10);
+                        container.children[100 * y + x].style.background = 'purple';
+                    }
+                    return path;
+                }
+                // 记录每个点的前驱点
+                await insert(x - 1, y, [x, y]);
+                await insert(x, y - 1, [x, y]);
+                await insert(x + 1, y, [x, y]);
+                await insert(x, y + 1, [x, y]);
+
+                await insert(x - 1, y - 1, [x, y]);
+                await insert(x + 1, y - 1, [x, y]);
+                await insert(x - 1, y + 1, [x, y]);
+                await insert(x + 1, y + 1, [x, y]);
+            }
+            return null;
+        }
+        
         paintMap(map);
     </script>
 </body>
