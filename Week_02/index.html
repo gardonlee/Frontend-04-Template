@@ -100,7 +100,7 @@
 
                     while (x !== start[0] || y !== start[1]) {
                         path.push(map[100 * y + x]);
-                        [x, y] = table[100 * y, x];
+                        [x, y] = table[100 * y + x];
                         await sleep(10);
                         container.children[100 * y + x].style.background = 'purple';
                     }
