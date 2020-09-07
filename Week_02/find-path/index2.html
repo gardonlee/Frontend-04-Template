@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>A* 寻路问题</title>
+    <title>启发式搜索 A* 寻路问题</title>
 </head>
 <body>
     <style>
@@ -33,40 +33,17 @@
         </div>
     </div>
     <script>
-        class Sorted {
-            constructor(data, compare) {
-                this.data = data.slice();
-                this.compare = compare || ((a, b) => a - b);
-            }
-            take() {
-                if (!this.data.length) {
-                    return;
-                }
-                let min = this.data[0];
-                let minIndex = 0;
-                for (let i = 0; i < this.data.length; i++) {
-                    if (this.compare(this.data[i], min) < 0) {
-                        min = this.data[i];
-                        minIndex = i;
-                    }
-                }
-                this.data[minIndex] = this.data[this.data.length - 1];
-                this.data.pop();
-                return min;
-            }
-            give(v) {
-                this.data.push(v);
-            }
-        }
+        // 初始化地图
         const container = document.querySelector('.map-container');
         let map = localStorage['map'] ? JSON.parse(localStorage['map']) : Array(100 * 100).fill(0);
         
+        // 清空地图
         const clearMap = () => {
             container.innerHTML = '';
             map = Array(100 * 100).fill(0);
             paintMap(map);
         };
-
+        // 绘制地图
         const paintMap = (_map) => {
             for (let y = 0; y < 100; y++) {
                 for (let x = 0; x < 100; x++) {
@@ -104,22 +81,57 @@
                 setTimeout(resolve, t);
             })
         };
-
+        // 简单的冒泡排序，可改用效率更高的堆来实现
+        class Sorted {
+            constructor(data, compare) {
+                this.data = data.slice();
+                this.compare = compare || ((a, b) => a - b);
+            }
+            take() {
+                if (!this.data.length) {
+                    return;
+                }
+                let min = this.data[0];
+                let minIndex = 0;
+                for (let i = 0; i < this.data.length; i++) {
+                    if (this.compare(this.data[i], min) < 0) {
+                        min = this.data[i];
+                        minIndex = i;
+                    }
+                }
+                this.data[minIndex] = this.data[this.data.length - 1];
+                this.data.pop();
+                return min;
+            }
+            give(v) {
+                this.data.push(v);
+            }
+            get length () {
+                return this.data.length;
+            }
+        }
+        // 寻路逻辑
         const findPath = async (map, start, end) => {
             const table = Object.create(map);
-            const queue = [start];
+            const queue = new Sorted([start], (a, b) => distance(a) - distance(b));
 
             const insert = async (x, y, pre) => {
                 if (x < 0 || x >= 100 || y < 0 || y >= 100) return;
                 if (table[100 * y + x]) return;
 
+                await sleep(10);
+
                 container.children[100 * y + x].style.background = 'lightgreen';
                 table[100 * y + x] = pre;
-                queue.push([x, y]);
+                queue.give([x, y]);
             };
 
+            const distance = (point) => {
+                return (point[0] - end[0]) ** 2 + (point[1] - end[1]) ** 2;
+            }
+
             while (queue.length) {
-                let [x, y] = queue.shift();
+                let [x, y] = queue.take();
                 if (x === end[0] && y === end[1]) {
                     const path = [];
 
