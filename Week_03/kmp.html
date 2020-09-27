@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>kmp</title>
+</head>
+<body>
+    <script>
+        const kmp = (source, pattern) => {
+            let table = new Array(pattern.length).fill(0);
+            let i = 1, j = 0;
+            while (i < pattern.length) {
+                if (pattern[i] === pattern[j]) {
+                    ++j, ++i;
+                     
+                }
+            }
+        }
+    </script>
+</body>
+</html> 

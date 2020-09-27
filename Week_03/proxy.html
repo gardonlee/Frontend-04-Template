@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>proxy</title>
+</head>
+<body>
+    <script>
+        let object = {
+            a: 1,
+            b: 2,
+        };
+        // 可以监听 object 并能修改，指定一个 proxy，可以拦截修改的对象
+        const reactive = (obj) => {
+            return new Proxy(object, {
+                set(obj, prop, val) {
+                    obj[prop] = val;
+                    console.log(obj, prop, val);
+                    return obj[prop];
+                },
+                get(obj, prop) {
+                    console.log(obj, prop);
+                    return obj[prop];
+                }
+            });
+        }
+        let po = reactive(object);
+    </script>
+</body>
+</html>

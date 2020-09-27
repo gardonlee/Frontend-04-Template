@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>reactive01</title>
+</head>
+<body>
+    <script>
+        let object = {
+            a: 1,
+            b: 2,
+        };
+        let cbks = new Map();
+        let usedReactivities = [];
+        // 封装一个 reactive 函数，可以监听 object 并能修改，指定一个 proxy，可以拦截修改的对象
+        const reactive = (obj) => {
+            return new Proxy(object, {
+                set(obj, prop, val) {
+                    obj[prop] = val;
+
+                    for (const cbk of cbks) {
+                        cbk();
+                    }
+                    return obj[prop];
+                },
+                get(obj, prop) {
+                    usedReactivities.push([obj, prop]);
+                    return obj[prop];
+                }
+            });
+        }
+
+        const effect = (cbk) => {
+            usedReactivities = [];
+            cbk();
+            console.log(usedReactivities);
+
+            for (const reactivity of usedReactivities) {
+                if (!cbks.has(reactivity[0])) {
+                    cbks.set(reactivity[0], new Map());
+                }
+                if (!cbks.get(reactivity[0].has(reactivity[1]))) {
+                    cbks.get(reactivity[0]).get(reactivity[1]).push(cbk);
+                }
+            }
+        }; 
+
+        let po = reactive(object);
+        effect(() => {
+            console.log(po.a);
+        })
+    </script>
+</body>
+</html>
