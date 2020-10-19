@@ -1,7 +1,9 @@
 const { rejects } = require("assert");
+const net = require('net');
 const { resolve, parse } = require("path");
 
 class Request {
+    // 初始化要发送到服务器的内容
     constructor(options) {
         this.method = options.method || 'GET';
         this.host = options.host;
@@ -10,7 +12,7 @@ class Request {
         this.body = options.body || {};
         this.headers = options.headers || {};
         
-        // content-type 必须的
+        // content-type、Content-Length 是必须的
         if (!this.headers['Content-Type']) {
             this.headers['Content-Type'] = 'application/x-www-form-urlencoded';
         }
@@ -20,11 +22,13 @@ class Request {
         } else if (this.headers['Content-Type'] === 'application/x-www-form-urlencoded') {
             this.bodyText = Object.keys(this.body).map(key => `${key}=${encodeURIComponent(this.body[key])}`).join('&');
         }
+
         this.headers['Content-Length'] = this.bodyText.length;
     }
+    // 发送函数，异步的
     send(connection) {
         return new Promise((resolve, rejects) => {
-            const parser = new ResponseParser;
+            const parser = new ResponseParser();
             if (connection) {
                 connection.write(this.toString());
             } else {
@@ -52,12 +56,13 @@ class Request {
     }
     toString() {
         return `${this.method} ${this.path} HTTP/1.1\r
-        ${Object.keys(this.headers).map(key => `${key}: ${this.headers[key]}`).join('\r\n')}\r
+        ${Object.keys(this.headers).map(key => `${key}: ${this.headers[key]}`).join('\r\n')}\r\r
         ${this.bodyText}
         `
     }
 }
 
+// 解析返回的内容
 class ResponseParser {
     constructor() {
         this.WAITING_STATUS_LINE = 0;
@@ -71,7 +76,7 @@ class ResponseParser {
         // body 状态
         this.WAITING_BODY = 7;
 
-        this.current = WAITING_STATUS_LINE;
+        this.current = this.WAITING_STATUS_LINE;
         this.statusLine = '';
         this.headers = {};
         this.headerName = '';
@@ -99,6 +104,9 @@ class ResponseParser {
                 this.current = this.WAITING_HEADER_SPACE;
             } else if (char === '\r') {
                 this.current = this.WAITING_HEADER_BLOCK_END;
+                if (this.headers['Transfer-Encoding'] === 'chunked') {
+                    this.bodyParser = new TrunkedBodyParser();
+                }
             } else {
                 this.headerName += char;
             }
@@ -115,11 +123,21 @@ class ResponseParser {
             }
         } else if (this.current === this.WAITING_HEADER_LINE_END) {
             if (char === '\n') {
+                this.current = this.WAITING_HEADER_NAME;
+            }
+        } else if (this.current === this.WAITING_HEADER_BLOCK_END) {
+            if (char === '\n') {
                 this.current = this.WAITING_BODY;
             }
         } else if (this.current === this.WAITING_BODY) {
-            console.log(char);
+            this.bodyParser.receiveChar(char);
         }
+    }
+}
+
+class TrunkedBodyParser {
+    constructor() {
+        this.
     }
 }
 
